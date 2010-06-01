@@ -10,7 +10,7 @@ import Test.HUnit
 -- The sum of these multiples is 23.
 -- Find the sum of all the multiples of 3 or 5 below 1000.
 
-actual1 = sum (filter (\n -> n `mod` 3 == 0 || n `mod` 5 == 0) [1..999])
+actual1 = sum [n|n<-[1..999], n `mod` 3 == 0 || n `mod` 5 == 0]
 expected1 = 233168
 problem1Tests = runTests [Test "1" expected1 actual1]
 
@@ -188,37 +188,39 @@ data HorizontalDir = HorizontalRight | HorizontalLeft
 data VerticalDir = VerticalUp | VerticalDown
 
 matrixDiagonal :: (Int,Int) -> (HorizontalDir,VerticalDir) -> [[a]] -> [a]
-matrixDiagonal (x,y) (HorizontalRight,VerticalUp) matrix = 
-	let 	distance = min ((matrixSize matrix) - x) (y+1)
-		xs = [x..(x+(distance-1))]
-		ys = if distance == 1 then [y] else [y,(y-1)..((distance-1)-y)]
-		indicies = zip xs ys
-	in	map (\(x,y) -> (matrixCol x matrix) !! y) indicies
+matrixDiagonal (x,y) (h,v) matrix = 
+	let indicies = matrixDiagonalIndicies (x,y) (h,v) (matrixSize matrix)
+	in map (\(x,y) -> (matrixCol x matrix) !! y) indicies
 
-matrixDiagonal (x,y) (HorizontalRight,VerticalDown) matrix = 
-        let     distance = min ((matrixSize matrix) - x) ((matrixSize matrix) - y)
-                xs = [x..(x+(distance-1))]
-                ys = [y..(y+(distance-1))]
-                indicies = zip xs ys
-        in      map (\(x,y) -> (matrixCol x matrix) !! y) indicies 
-
-matrixDiagonal (x,y) (HorizontalLeft,VerticalUp) matrix =  
+matrixDiagonalIndicies :: (Int,Int) -> (HorizontalDir,VerticalDir) -> Int -> [(Int,Int)]
+matrixDiagonalIndicies (x,y) (HorizontalRight,VerticalUp) size = 
+	let 	distance = min (size - x) (y+1)
+	in	zip [x..(x+(distance-1))] (if distance == 1 then [y] else [y,(y-1)..((distance-1)-y)])
+matrixDiagonalIndicies (x,y) (HorizontalRight,VerticalDown) size = 
+        let     distance = min (size - x) (size - y)
+       	in	zip [x..(x+(distance-1))] [y..(y+(distance-1))]
+matrixDiagonalIndicies (x,y) (HorizontalLeft,VerticalUp) size =  
         let     distance = min (x+1) (y+1)
-		xs = if distance == 1 then [x] else [x,(x-1)..((distance-1)-x)]
-		ys = if distance == 1 then [y] else [y,(y-1)..((distance-1)-y)]
-                indicies = zip xs ys
-        in      map (\(x,y) -> (matrixCol x matrix) !! y) indicies
+	in 	zip (if distance == 1 then [x] else [x,(x-1)..((distance-1)-x)])
+			(if distance == 1 then [y] else [y,(y-1)..((distance-1)-y)])
+matrixDiagonalIndicies (x,y) (HorizontalLeft,VerticalDown) size =
+	let     distance = min (x+1) (size - y)
+        in	zip (if distance == 1 then [x] else [x,(x-1)..((distance-1)-x)]) [y..(y+(distance-1))]
 
-matrixDiagonal (x,y) (HorizontalLeft,VerticalDown) matrix =
-	let     distance = min (x+1) ((matrixSize matrix) - y)
-                xs = if distance == 1 then [x] else [x,(x-1)..((distance-1)-x)]
-		ys = [y..(y+(distance-1))]
-                indicies = zip xs ys
-        in      map (\(x,y) -> (matrixCol x matrix) !! y) indicies
- 
+-- next steps... 
+-- get all rows - map (\x -> matrixRow x matrix) [0..19] 
+-- get all cols - map (\x -> matrixCol x matrix) [0..19]
+-- get all diagonals
+-- from 0..19 get all the diagonals going down, and right. 
+-- from 19,18..0 get all the diagonals going down, and left. 
+-- from 0..19 get all the diagonals going up, and right. 
+-- from 19,18..0 get all the diagonals going up, and left. 
 
--- given point (x:6,y:5) and (up,right) we need [(6,5) (7,4) (8,3) (9,2) (10,1) (11,0)]
--- given point (x:6,y:5) and (down,left) we need [(6,5) (5,6) (4,7) (3,8) (2,9) (1,10) (0, 11)]
+-- put them all in one giant [[int]]
+-- slice them all into 4's [[[int]]]
+-- join [[int]]
+-- max of multiply each...
+
 
 --------------------
 ------ tests -------
