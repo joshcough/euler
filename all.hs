@@ -3,6 +3,24 @@ import Monad
 import List
 import Test.HUnit
 
+-----------------------------------
+------ helper functions -----------
+-----------------------------------
+stringToInt :: String -> Int
+stringToInt s = (read s) :: Int
+charToInt :: Char -> Int
+charToInt c = stringToInt [c]
+stringToIntList s = map charToInt s
+intToIntList n = stringToIntList (show n)
+letters = ['A'..'Z']
+-- there might be a built in way to do this, or a better way in general.
+slices :: Int -> [a] -> [[a]]
+slices n [] = []
+slices n all@(x:xs) = break all [] where
+        break [] acc = acc
+        break all@(x:xs) acc = break xs ((take n all):acc)
+triangeNums = [n*(n+1)/2|n<-[1..]]
+
 --------------------
 ------ 1 -----------
 --------------------
@@ -85,10 +103,11 @@ problem5Tests = runTests [Test "5" expected5 actual5]
 -- one hundred natural numbers and the square of the sum.
 
 square n = n * n
-squaresTo n = map square [1..n]
-sumOfSquares n = sum (squaresTo n)
-squareOfSum n = square (sum [1..n])
-actual6 = squareOfSum 100 - sumOfSquares 100 
+naturals = [1..]
+squares = [x*x|x<-naturals]
+sumOfSquaresTo n = sum (take n squares)
+squareOfSumsTo n = square (sum (take n naturals))
+actual6 = squareOfSumsTo 100 - sumOfSquaresTo 100 
 expected6 = 25164150
 problem6Tests = runTests [Test "6" expected6 actual6]
 
@@ -109,20 +128,6 @@ problem7Tests = runTests [Test "7" expected7 actual7]
 --------------------
 -- Find the greatest product of five consecutive digits in the 1000-digit number.
 crazy = "731671765313306249192251196744265747423553491949349698352031277450632623957831801698480186947885184385861560789112949495459501737958331952853208805511125406987471585238630507156932909632952274430435576689664895044524452316173185640309871112172238311362229893423380308135336276614282806444486645238749303580729629049156044077239071381051585930796086670172427121883998797908792274921901699720888093776657273330010533678812202354218097512545405947522435258490771167055601360483958644670632441572215539753697817977846174064955149290862569321978468622482839722413756570560574902614079729686524145351004748216637048440319989000889524345065854122758866688116427171479924442928230863465674813919123162824586178664583591245665294765456828489128831426076900422421902267105562632111110937054421750694165896040807198403850962455444362981230987879927244284909188845801561660979191338754992005240636899125607176060588611646710940507754100225698315520005593572972571636269561882670428252483600823257530420752963450"
-
--- helpers
-stringToInt :: String -> Int
-stringToInt s = (read s) :: Int
-charToInt :: Char -> Int
-charToInt c = stringToInt [c]
-stringToIntList :: String -> [Int]
-stringToIntList s = map charToInt s
--- there might be a built in way to do this, or a better way in general.
-slices :: Int -> [a] -> [[a]] 
-slices n [] = []
-slices n all@(x:xs) = break all [] where  
-	break [] acc = acc
-	break all@(x:xs) acc = break xs ((take n all):acc)
 
 -- actual impl
 actual8 = maximum (map (\x -> foldl (*) 1 x) (map stringToIntList (slices 5 crazy))) 
@@ -221,6 +226,60 @@ matrixDiagonalIndicies (x,y) (HorizontalLeft,VerticalDown) size =
 -- join [[int]]
 -- max of multiply each...
 
+--------------------
+------ 14 ----------
+--------------------
+-- The following iterative sequence is defined for the set of positive integers:
+-- n  n/2 (n is even)
+-- n  3n + 1 (n is odd)
+-- Using the rule above and starting with 13, we generate the following sequence:
+-- 13  40  20  10  5  16  8  4  2  1
+-- It can be seen that this sequence (starting at 13 and finishing at 1) contains 10 terms.
+-- Although it has not been proved yet (Collatz Problem), 
+-- it is thought that all starting numbers finish at 1.
+-- Which starting number, under one million, produces the longest chain?
+
+evenoddchainlength n = length (unfoldr succ n) where 
+	tochainnum n = if odd n then 3*n+1 else div n 2
+	succ n = if n == 1 then Nothing else Just (n, tochainnum n)
+chaincompare (n, size) next = 
+	let nextlength = evenoddchainlength next
+	in if nextlength > size then (next, nextlength) else (n,size)
+actual14 = foldl chaincompare (0,0) [1..100000]
+
+--------------------
+------ 20 ----------
+--------------------
+--n! means n  (n  1)  ...  3  2  1
+--Find the sum of the digits in the number 100!
+fac n = foldl (*) 1 [1..n]
+actual20 = sum (intToIntList (fac 100))
+expected20 = 648
+problem20Tests = runTests [Test "20" expected20 actual20]
+
+--------------------
+------ 22 ----------
+--------------------
+-- Using names.txt (right click and 'Save Link/Target As...'),
+-- a 46K text file containing over five-thousand first names, 
+-- begin by sorting it into alphabetical order. 
+-- Then working out the alphabetical value for each name, 
+-- multiply this value by its alphabetical position in the list to obtain a name score.
+-- For example, when the list is sorted into alphabetical order, COLIN, 
+-- which is worth 3 + 15 + 12 + 9 + 14 = 53, is the 938th name in the list. 
+-- So, COLIN would obtain a score of 938  53 = 49714.
+-- What is the total of all the name scores in the file?
+
+-- start with just a few of the names already in a string
+names = sort ["MARY","PATRICIA","LINDA","BARBARA","ELIZABETH","JENNIFER","MARIA","SUSAN"]
+positions = map (\x -> map (\c -> fromJust (elemIndex c letters) + 1) x) names
+
+--------------------
+------ 25 ----------
+--------------------
+actual25 = fromJust (findIndex (\x -> (length (show x)) >= 1000) fibs)
+expected25 = 4782
+problem25Tests = runTests [Test "25" expected25 actual25]
 
 --------------------
 ------ tests -------
